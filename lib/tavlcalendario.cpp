@@ -1,27 +1,37 @@
 #include "tavlcalendario.h"
 
-TNodoAVL::TNodoAVL() : iz(), de(), item(), fe() {}
-
-TNodoAVL::TNodoAVL(const TNodoAVL &nodo)
+TNodoAVL::TNodoAVL()
 {
-    item = nodo.item;
-    iz = nodo.iz;
-    de = nodo.de;
-    fe = nodo.fe;
+    item = TCalendario();
+    iz = TAVLCalendario();
+    de = TAVLCalendario();
+    fe = 0;
+}
+
+TNodoAVL::TNodoAVL(const TNodoAVL &n)
+{
+    item = n.item;
+    iz = n.iz;
+    de = n.de;
+    fe = n.fe;
 }
 
 TNodoAVL::~TNodoAVL()
 {
+    item = TCalendario();
+    iz.~TAVLCalendario();
+    de.~TAVLCalendario();
+    fe = 0;
 }
 
-TNodoAVL &TNodoAVL::operator=(const TNodoAVL &nodo)
+TNodoAVL &TNodoAVL::operator=(const TNodoAVL &n)
 {
-    if (this != &nodo)
+    if (this != &n)
     {
-        item = nodo.item;
-        iz = nodo.iz;
-        de = nodo.de;
-        fe = nodo.fe;
+        item = n.item;
+        iz = n.iz;
+        de = n.de;
+        fe = n.fe;
     }
 
     return *this;
@@ -83,22 +93,22 @@ bool TAVLCalendario::operator!=(const TAVLCalendario &arbol) const
     return !(*this == arbol);
 }
 
-int TAVLCalendario::ObtenerNodoFE() const
+int TAVLCalendario::nodoFE() const
 {
     return (raiz->de.Altura() - raiz->iz.Altura());
 }
 
-void TAVLCalendario::ObtenerArbolFE()
+void TAVLCalendario::actualizarArbolFE()
 {
     if (raiz != NULL)
     {
-        raiz->iz.ObtenerArbolFE();
-        raiz->de.ObtenerArbolFE();
-        raiz->fe = ObtenerNodoFE();
+        raiz->iz.actualizarArbolFE();
+        raiz->de.actualizarArbolFE();
+        raiz->fe = nodoFE();
     }
 }
 
-void TAVLCalendario::RotacionII()
+void TAVLCalendario::rotacionII()
 {
     TNodoAVL *j;
     j = raiz->iz.raiz;
@@ -106,10 +116,10 @@ void TAVLCalendario::RotacionII()
     j->de.raiz = raiz;
     raiz = j;
 
-    ObtenerArbolFE();
+    actualizarArbolFE();
 }
 
-void TAVLCalendario::RotacionID()
+void TAVLCalendario::rotacionID()
 {
     TNodoAVL *j;
     j = raiz->iz.raiz;
@@ -119,10 +129,10 @@ void TAVLCalendario::RotacionID()
     j->de.raiz = raiz->iz.raiz;
     raiz->iz.raiz = j;
 
-    ObtenerArbolFE();
+    actualizarArbolFE();
 }
 
-void TAVLCalendario::RotacionDD()
+void TAVLCalendario::rotacionDD()
 {
     TNodoAVL *j;
     j = raiz->de.raiz;
@@ -130,10 +140,10 @@ void TAVLCalendario::RotacionDD()
     j->iz.raiz = raiz;
     raiz = j;
 
-    ObtenerArbolFE();
+    actualizarArbolFE();
 }
 
-void TAVLCalendario::RotacionDI()
+void TAVLCalendario::rotacionDI()
 {
     TNodoAVL *j;
     j = raiz->de.raiz;
@@ -143,33 +153,33 @@ void TAVLCalendario::RotacionDI()
     j->iz.raiz = raiz->de.raiz;
     raiz->de.raiz = j;
 
-    ObtenerArbolFE();
+    actualizarArbolFE();
 }
 
-void TAVLCalendario::ComprobarFE()
+void TAVLCalendario::arreglarArbol()
 {
-    raiz->fe = ObtenerNodoFE();
+    raiz->fe = nodoFE();
 
     if (raiz->fe < -1)
     {
         if (raiz->iz.raiz->fe <= 0)
         {
-            RotacionII();
+            rotacionII();
         }
         else
         {
-            RotacionID();
+            rotacionID();
         }
     }
     else if (raiz->fe > 1)
     {
         if (raiz->de.raiz->fe >= 0)
         {
-            RotacionDD();
+            rotacionDD();
         }
         else
         {
-            RotacionDI();
+            rotacionDI();
         }
     }
 }
@@ -202,7 +212,7 @@ bool TAVLCalendario::Insertar(const TCalendario &cal)
 
     if (insertado)
     {
-        ComprobarFE();
+        arreglarArbol();
     }
 
     return insertado;
@@ -258,7 +268,7 @@ bool TAVLCalendario::Borrar(const TCalendario &cal)
     }
     if (raiz != NULL)
     {
-        ComprobarFE();
+        arreglarArbol();
     }
 
     return borrado;
@@ -304,36 +314,22 @@ TCalendario TAVLCalendario::Raiz() const
 
 int TAVLCalendario::Altura() const
 {
-    int alturaIZ, alturaDE;
-
-    if (EsVacio())
+    if (raiz != NULL)
     {
-        return 0;
+        int iz = raiz->iz.Altura();
+        int de = raiz->de.Altura();
+        return (1 + (iz > de ? iz : de));
     }
-    else
-    {
-        alturaIZ = raiz->iz.Altura();
-        alturaDE = raiz->de.Altura();
-
-        return (1 + max(alturaIZ, alturaDE));
-    }
+    return 0;
 }
 
 int TAVLCalendario::Nodos() const
 {
-    int nodosIZ, nodosDE;
-
-    if (EsVacio())
+    if (raiz != NULL)
     {
-        return 0;
+        return 1 + raiz->iz.Nodos() + raiz->de.Nodos();
     }
-    else
-    {
-        nodosIZ = raiz->iz.Nodos();
-        nodosDE = raiz->de.Nodos();
-
-        return (1 + nodosIZ + nodosDE);
-    }
+    return 0;
 }
 
 int TAVLCalendario::NodosHoja() const
@@ -361,7 +357,7 @@ int TAVLCalendario::NodosHoja() const
 
 void TAVLCalendario::InordenAux(TVectorCalendario &vector, int &pos) const
 {
-    if (!EsVacio())
+    if (raiz != NULL)
     {
         raiz->iz.InordenAux(vector, pos);
         vector[pos] = raiz->item;
@@ -380,7 +376,7 @@ TVectorCalendario TAVLCalendario::Inorden() const
 
 void TAVLCalendario::PreordenAux(TVectorCalendario &vector, int &pos) const
 {
-    if (!EsVacio())
+    if (raiz != NULL)
     {
         vector[pos] = raiz->item;
         pos++;
@@ -399,7 +395,7 @@ TVectorCalendario TAVLCalendario::Preorden() const
 
 void TAVLCalendario::PostordenAux(TVectorCalendario &vector, int &pos) const
 {
-    if (!EsVacio())
+    if (raiz != NULL)
     {
         raiz->iz.PostordenAux(vector, pos);
         raiz->de.PostordenAux(vector, pos);

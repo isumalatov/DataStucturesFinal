@@ -1,45 +1,80 @@
 #include "tvectorcalendario.h"
 
+bool TVectorCalendario::daysInMonth(int dia, int mes, int anyo)
+{
+    if (mes < 1 || mes > 12 || anyo < 1900)
+    {
+        return false;
+    }
+    else
+    {
+        int sum = 0;
+        if ((anyo % 100 != 0 || anyo % 400 == 0) && anyo % 4 == 0)
+        {
+            sum = 1;
+        }
+        int days[] = {31, 28 + sum, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+        if (dia < 1 || dia > days[mes - 1])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void TVectorCalendario::copia(const TVectorCalendario &v)
+{
+    tamano = v.tamano;
+    c = new TCalendario[tamano];
+
+    for (int i = 0; i < tamano; i++)
+    {
+        c[i] = v.c[i];
+    }
+}
+
 TVectorCalendario::TVectorCalendario()
 {
-    this->c = NULL;
-    this->tamano = 0;
+    tamano = 0;
+    c = NULL;
 }
 
 TVectorCalendario::TVectorCalendario(int tam)
 {
     if (tam <= 0)
     {
-        this->c = NULL;
-        this->tamano = 0;
+        c = NULL;
+        tamano = 0;
     }
     else
     {
-        this->c = new TCalendario[tam];
-        this->tamano = tam;
+        c = new TCalendario[tam];
+        tamano = tam;
     }
 }
 
-TVectorCalendario::TVectorCalendario(const TVectorCalendario &vec)
+TVectorCalendario::TVectorCalendario(const TVectorCalendario &v)
 {
-    Copia(vec);
+    copia(v);
 }
 
 TVectorCalendario::~TVectorCalendario()
 {
-    if (this->c != NULL)
+    if (c != NULL)
     {
-        delete[] this->c;
-        this->c = NULL;
+        delete[] c;
+        c = NULL;
     }
 }
 
-TVectorCalendario &TVectorCalendario::operator=(const TVectorCalendario &vec)
+TVectorCalendario &TVectorCalendario::operator=(const TVectorCalendario &v)
 {
-    if (this != &vec)
+    if (this != &v)
     {
         (*this).~TVectorCalendario();
-        Copia(vec);
+        copia(v);
     }
     else
     {
@@ -49,62 +84,21 @@ TVectorCalendario &TVectorCalendario::operator=(const TVectorCalendario &vec)
     return *this;
 }
 
-void TVectorCalendario::Copia(const TVectorCalendario &vec)
+bool TVectorCalendario::operator==(const TVectorCalendario &v)
 {
-    this->tamano = vec.tamano;
-    this->c = new TCalendario[tamano];
-
-    for (int i = 0; i < tamano; i++)
+    if (tamano != v.tamano)
     {
-        c[i] = vec.c[i];
-    }
-}
-
-bool TVectorCalendario::ComprobarFecha(int dia, int mes, int anyo)
-{
-    bool valido = true;
-
-    if (anyo < 1900 || mes < 1 || mes > 12)
-    {
-
-        valido = false;
+        return false;
     }
     else
     {
-        int bisiesto = 0;
-
-        if (anyo % 4 == 0 && (anyo % 100 != 0 || anyo % 400 == 0))
-        {
-            bisiesto = 1;
-        }
-
-        int dias_por_mes[] = {31, 28 + bisiesto, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-        if (dia < 1 || dia > dias_por_mes[mes - 1])
-        {
-
-            valido = false;
-        }
-    }
-
-    return valido;
-}
-
-bool TVectorCalendario::operator==(const TVectorCalendario &vec)
-{
-    if (tamano == vec.tamano)
-    {
         for (int i = 0; i < tamano; i++)
         {
-            if (this->c[i] != vec.c[i])
+            if (this->c[i] != v.c[i])
             {
                 return false;
             }
         }
-    }
-    else
-    {
-        return false;
     }
 
     return true;
@@ -115,21 +109,21 @@ bool TVectorCalendario::operator!=(const TVectorCalendario &vec)
     return !(*this == vec);
 }
 
-TCalendario &TVectorCalendario::operator[](int num)
+TCalendario &TVectorCalendario::operator[](int i)
 {
-    if (num > 0 && num <= this->tamano)
+    if (i > 0 && i <= tamano)
     {
-        return this->c[num - 1];
+        return c[i - 1];
     }
 
     return error;
 }
 
-TCalendario TVectorCalendario::operator[](int num) const
+TCalendario TVectorCalendario::operator[](int i) const
 {
-    if (num > 0 && num <= this->tamano)
+    if (i > 0 && i <= tamano)
     {
-        return this->c[num - 1];
+        return c[i - 1];
     }
 
     return error;
@@ -155,11 +149,11 @@ int TVectorCalendario::Ocupadas()
     return ocupadas;
 }
 
-bool TVectorCalendario::ExisteCal(const TCalendario &cal)
+bool TVectorCalendario::ExisteCal(const TCalendario &casillas)
 {
     for (int i = 0; i < tamano; i++)
     {
-        if (this->c[i] == cal)
+        if (c[i] == casillas)
         {
             return true;
         }
@@ -172,27 +166,27 @@ void TVectorCalendario::MostrarMensajes(int dia, int mes, int anyo)
 {
     cout << "[";
 
-    if (ComprobarFecha(dia, mes, anyo))
+    if (daysInMonth(dia, mes, anyo))
     {
         for (int i = 0; i < tamano; i++)
         {
-            if (this->c[i].Anyo() < anyo)
+            if (c[i].Anyo() < anyo)
             {
                 continue;
             }
-            else if (this->c[i].Anyo() == anyo && this->c[i].Mes() < mes)
+            else if (c[i].Anyo() == anyo && c[i].Mes() < mes)
             {
                 continue;
             }
-            else if (this->c[i].Anyo() == anyo && this->c[i].Mes() == mes && this->c[i].Dia() < dia)
+            else if (c[i].Anyo() == anyo && c[i].Mes() == mes && c[i].Dia() < dia)
             {
                 continue;
             }
             else
             {
-                cout << this->c[i];
+                cout << c[i];
 
-                if (i < this->tamano - 1)
+                if (i < tamano - 1)
                 {
                     cout << ", ";
                 }
@@ -205,35 +199,26 @@ void TVectorCalendario::MostrarMensajes(int dia, int mes, int anyo)
 
 bool TVectorCalendario::Redimensionar(int tam)
 {
-    if (tam <= 0 || tam == this->tamano)
+    if (tam <= 0)
     {
         return false;
     }
-
+    if (tam == tamano)
+    {
+        return false;
+    }
     TCalendario *nuevo = new TCalendario[tam];
 
-    if (tam < this->tamano)
-    {
-        for (int i = 0; i < tam; i++)
-        {
-            nuevo[i] = this->c[i];
-        }
-        (*this).~TVectorCalendario();
-        this->c = nuevo;
-        this->tamano = tam;
-
-        return true;
-    }
-    else
+    if (tam >= tamano)
     {
         TCalendario *vacio = new TCalendario();
 
-        for (int i = 0; i < this->tamano; i++)
+        for (int i = 0; i < tamano; i++)
         {
-            nuevo[i] = this->c[i];
+            nuevo[i] = c[i];
         }
 
-        for (int i = this->tamano; i < tam; i++)
+        for (int i = tamano; i < tam; i++)
         {
             nuevo[i] = *vacio;
         }
@@ -241,21 +226,33 @@ bool TVectorCalendario::Redimensionar(int tam)
         delete vacio;
 
         (*this).~TVectorCalendario();
-        this->c = nuevo;
-        this->tamano = tam;
+        c = nuevo;
+        tamano = tam;
+
+        return true;
+    }
+    else
+    {
+        for (int i = 0; i < tam; i++)
+        {
+            nuevo[i] = c[i];
+        }
+        (*this).~TVectorCalendario();
+        c = nuevo;
+        tamano = tam;
 
         return true;
     }
 }
 
-ostream &operator<<(ostream &s, const TVectorCalendario &vec)
+ostream &operator<<(ostream &s, const TVectorCalendario &imprimir)
 {
     s << "[";
-    for (int i = 0; i < vec.tamano; i++)
+    for (int i = 0; i < imprimir.tamano; i++)
     {
-        s << "(" << i + 1 << ") " << vec.c[i];
+        s << "(" << i + 1 << ") " << imprimir.c[i];
 
-        if (i < vec.tamano - 1)
+        if (i < imprimir.tamano - 1)
         {
             s << ", ";
         }

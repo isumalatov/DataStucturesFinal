@@ -1,26 +1,34 @@
 #include "tabbcalendario.h"
 #include <queue>
 
-TNodoABB::TNodoABB() : iz(), de(), item() {}
-
-TNodoABB::TNodoABB(const TNodoABB &nodo)
+TNodoABB::TNodoABB()
 {
-    item = nodo.item;
-    iz = nodo.iz;
-    de = nodo.de;
+    item = TCalendario();
+    iz = TABBCalendario();
+    de = TABBCalendario();
+}
+
+TNodoABB::TNodoABB(const TNodoABB &n)
+{
+    item = n.item;
+    iz = n.iz;
+    de = n.de;
 }
 
 TNodoABB::~TNodoABB()
 {
+    item.~TCalendario();
+    iz.~TABBCalendario();
+    de.~TABBCalendario();
 }
 
-TNodoABB &TNodoABB::operator=(const TNodoABB &nodo)
+TNodoABB &TNodoABB::operator=(const TNodoABB &n)
 {
-    if (this != &nodo)
+    if (this != &n)
     {
-        item = nodo.item;
-        iz = nodo.iz;
-        de = nodo.de;
+        item = n.item;
+        iz = n.iz;
+        de = n.de;
     }
 
     return *this;
@@ -33,7 +41,16 @@ TABBCalendario::TABBCalendario()
 
 TABBCalendario::TABBCalendario(const TABBCalendario &arbol)
 {
-    Copia(arbol);
+    if (arbol.raiz != NULL)
+    {
+        TNodoABB *aux = new TNodoABB();
+        aux->item = arbol.raiz->item;
+        this->raiz = aux;
+        this->raiz->iz = TABBCalendario(arbol.raiz->iz);
+        this->raiz->de = TABBCalendario(arbol.raiz->de);
+    }
+    else
+        raiz = NULL;
 }
 
 TABBCalendario::~TABBCalendario()
@@ -50,26 +67,16 @@ TABBCalendario &TABBCalendario::operator=(const TABBCalendario &arbol)
     if (this != &arbol)
     {
         (*this).~TABBCalendario();
-        Copia(arbol);
+        if (arbol.raiz != NULL)
+        {
+            TNodoABB *aux = new TNodoABB();
+            aux->item = arbol.raiz->item;
+            this->raiz = aux;
+            this->raiz->iz = TABBCalendario(arbol.raiz->iz);
+            this->raiz->de = TABBCalendario(arbol.raiz->de);
+        }
     }
-
     return *this;
-}
-
-void TABBCalendario::Copia(const TABBCalendario &arbol)
-{
-    if (arbol.raiz != NULL)
-    {
-        TNodoABB *aux = new TNodoABB();
-        aux->item = arbol.raiz->item;
-        this->raiz = aux;
-        this->raiz->iz.Copia(arbol.raiz->iz);
-        this->raiz->de.Copia(arbol.raiz->de);
-    }
-    else
-    {
-        this->raiz = NULL;
-    }
 }
 
 bool TABBCalendario::operator==(const TABBCalendario &arbol) const
@@ -128,25 +135,22 @@ bool TABBCalendario::Borrar(const TCalendario &cal)
 {
     if (Buscar(cal))
     {
-        if (Raiz() > cal)
-        {
+        if (raiz->item > cal)
             return raiz->iz.Borrar(cal);
-        }
-        else if (Raiz() < cal)
-        {
+        else if (raiz->item < cal)
             return raiz->de.Borrar(cal);
-        }
-        else if (raiz->iz.EsVacio() && raiz->de.EsVacio())
+        else if (raiz->iz.raiz == NULL && raiz->de.raiz == NULL)
         {
+            delete raiz;
             raiz = NULL;
             return true;
         }
-        else if (raiz->iz.EsVacio())
+        else if (raiz->iz.raiz == NULL)
         {
             raiz = raiz->de.raiz;
             return true;
         }
-        else if (raiz->de.EsVacio())
+        else if (raiz->de.raiz == NULL)
         {
             raiz = raiz->iz.raiz;
             return true;
@@ -155,13 +159,11 @@ bool TABBCalendario::Borrar(const TCalendario &cal)
         {
             TNodoABB *aux = raiz->iz.raiz;
             TCalendario sustituto = raiz->iz.raiz->item;
-
             while (!aux->de.EsVacio())
             {
-                sustituto = aux->de.raiz->item;
+                sustituto = raiz->de.raiz->item;
                 aux = aux->de.raiz;
             }
-
             raiz->item = sustituto;
             return raiz->iz.Borrar(sustituto);
         }
@@ -200,48 +202,30 @@ bool TABBCalendario::EsVacio() const
 
 TCalendario TABBCalendario::Raiz() const
 {
-    TCalendario vacio;
-
     if (raiz != NULL)
     {
         return raiz->item;
     }
 
-    return vacio;
+    return TCalendario();
 }
 
 int TABBCalendario::Altura() const
 {
-    int alturaIZ, alturaDE;
-
-    if (EsVacio())
+    if (raiz != NULL)
     {
-        return 0;
+        int iz = raiz->iz.Altura();
+        int de = raiz->de.Altura();
+        return 1 + (iz > de ? iz : de);
     }
-    else
-    {
-        alturaIZ = raiz->iz.Altura();
-        alturaDE = raiz->de.Altura();
-
-        return (1 + max(alturaIZ, alturaDE));
-    }
+    return 0;
 }
 
 int TABBCalendario::Nodos() const
 {
-    int nodosIZ, nodosDE;
-
-    if (EsVacio())
-    {
-        return 0;
-    }
-    else
-    {
-        nodosIZ = raiz->iz.Nodos();
-        nodosDE = raiz->de.Nodos();
-
-        return (1 + nodosIZ + nodosDE);
-    }
+    if (raiz != NULL)
+        return 1 + raiz->iz.Nodos() + raiz->de.Nodos();
+    return 0;
 }
 
 int TABBCalendario::NodosHoja() const
@@ -269,7 +253,7 @@ int TABBCalendario::NodosHoja() const
 
 void TABBCalendario::InordenAux(TVectorCalendario &vector, int &pos) const
 {
-    if (!EsVacio())
+    if (raiz != NULL)
     {
         raiz->iz.InordenAux(vector, pos);
         vector[pos] = raiz->item;
@@ -288,7 +272,7 @@ TVectorCalendario TABBCalendario::Inorden() const
 
 void TABBCalendario::PreordenAux(TVectorCalendario &vector, int &pos) const
 {
-    if (!EsVacio())
+    if (raiz != NULL)
     {
         vector[pos] = raiz->item;
         pos++;
@@ -307,7 +291,7 @@ TVectorCalendario TABBCalendario::Preorden() const
 
 void TABBCalendario::PostordenAux(TVectorCalendario &vector, int &pos) const
 {
-    if (!EsVacio())
+    if (raiz != NULL)
     {
         raiz->iz.PostordenAux(vector, pos);
         raiz->de.PostordenAux(vector, pos);
@@ -328,25 +312,20 @@ TVectorCalendario TABBCalendario::Niveles() const
 {
     TVectorCalendario vector(Nodos());
     int pos = 1;
-    if (!EsVacio())
+    if (raiz != NULL)
     {
-        queue<TNodoABB *> nodosQueue;
-        nodosQueue.push(raiz);
-
-        while (!nodosQueue.empty())
+        queue<TNodoABB *> cola;
+        cola.push(raiz);
+        while (!cola.empty())
         {
-            TNodoABB *nodoActual = nodosQueue.front();
-            nodosQueue.pop();
-            vector[pos] = nodoActual->item;
+            TNodoABB *aux = cola.front();
+            cola.pop();
+            vector[pos] = aux->item;
             pos++;
-            if (nodoActual->iz.raiz != NULL)
-            {
-                nodosQueue.push(nodoActual->iz.raiz);
-            }
-            if (nodoActual->de.raiz != NULL)
-            {
-                nodosQueue.push(nodoActual->de.raiz);
-            }
+            if (aux->iz.raiz != NULL)
+                cola.push(aux->iz.raiz);
+            if (aux->de.raiz != NULL)
+                cola.push(aux->de.raiz);
         }
     }
 
@@ -389,4 +368,74 @@ ostream &operator<<(ostream &s, const TABBCalendario &arbol)
     s << arbol.Niveles();
 
     return s;
+}
+
+bool TABBCalendario::InsertarExamen(const TCalendario &cal, int &resultado)
+{
+    if (Buscar(cal))
+    {
+        return false;
+    }
+    else
+    {
+        TNodoABB *nodoInsertar = new TNodoABB();
+        nodoInsertar->item = cal;
+
+        if (EsVacio())
+        {
+            raiz = nodoInsertar;
+            resultado = 0;
+            return true;
+        }
+
+        TNodoABB *padre = NULL;
+        TNodoABB *aux = raiz;
+
+        while (aux != NULL)
+        {
+            padre = aux;
+
+            if (aux->item > cal)
+            {
+                aux = aux->iz.raiz;
+            }
+            else
+            {
+                aux = aux->de.raiz;
+            }
+        }
+
+        if (padre->item > cal)
+        {
+            padre->iz.raiz = nodoInsertar;
+            resultado = -1;
+        }
+        else
+        {
+            padre->de.raiz = nodoInsertar;
+            resultado = 1;
+        }
+        return true;
+    }
+}
+
+void TABBCalendario::Clasificar(TVectorCalendario &v,TListaCalendario &l1, TListaCalendario &l2, TListaCalendario &l3)
+{
+    for(int i = 1; i <= v.Tamano(); i++)
+    {
+        int resultado = 2;
+        this->InsertarExamen(v[i], resultado);
+        if(resultado == 0)
+        {
+            l1.Insertar(v[i]);
+        }
+        else if(resultado == -1)
+        {
+            l2.Insertar(v[i]);
+        }
+        else if(resultado == 1)
+        {
+            l3.Insertar(v[i]);
+        }
+    }
 }

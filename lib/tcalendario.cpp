@@ -1,5 +1,45 @@
 #include "tcalendario.h"
 
+bool TCalendario::daysInMonth(int dia, int mes, int anyo)
+{
+    if (mes < 1 || mes > 12 || anyo < 1900)
+    {
+        return false;
+    }
+    else
+    {
+        int sum = 0;
+        if ((anyo % 100 != 0 || anyo % 400 == 0) && anyo % 4 == 0)
+        {
+            sum = 1;
+        }
+        int days[] = {31, 28 + sum, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+        if (dia < 1 || dia > days[mes - 1])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void TCalendario::copia(const TCalendario &c)
+{
+    dia = c.dia;
+    mes = c.mes;
+    anyo = c.anyo;
+    if (c.mensaje != NULL)
+    {
+        mensaje = new char[strlen(c.mensaje) + 1];
+        strcpy(this->mensaje, c.mensaje);
+    }
+    else
+    {
+        mensaje = NULL;
+    }
+}
+
 TCalendario::TCalendario()
 {
     dia = 1;
@@ -10,61 +50,33 @@ TCalendario::TCalendario()
 
 TCalendario::TCalendario(int dia, int mes, int anyo, char *mens)
 {
-    if (ComprobarFecha(dia, mes, anyo))
-    {
-        this->dia = dia;
-        this->mes = mes;
-        this->anyo = anyo;
-
-        if (mens == NULL)
-        {
-            this->mensaje = NULL;
-        }
-        else
-        {
-            this->mensaje = new char[strlen(mens) + 1];
-            strcpy(this->mensaje, mens);
-        }
-    }
-    else
+    if (!daysInMonth(dia, mes, anyo))
     {
         this->dia = 1;
         this->mes = 1;
         this->anyo = 1900;
         this->mensaje = NULL;
     }
-}
-
-bool TCalendario::ComprobarFecha(int dia, int mes, int anyo)
-{
-    bool valido = true;
-
-    if (anyo < 1900 || mes < 1 || mes > 12)
-    {
-        valido = false;
-    }
     else
     {
-        int bisiesto = 0;
-        if (anyo % 4 == 0 && (anyo % 100 != 0 || anyo % 400 == 0))
+        this->dia = dia;
+        this->mes = mes;
+        this->anyo = anyo;
+        if (mens != NULL)
         {
-            bisiesto = 1;
+            mensaje = new char[strlen(mens) + 1];
+            strcpy(mensaje, mens);
         }
-
-        int dias_por_mes[] = {31, 28 + bisiesto, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-        if (dia < 1 || dia > dias_por_mes[mes - 1])
+        else
         {
-            valido = false;
+            mensaje = NULL;
         }
     }
-
-    return valido;
 }
 
-TCalendario::TCalendario(const TCalendario &cal)
+TCalendario::TCalendario(const TCalendario &c)
 {
-    Copia(cal);
+    copia(c);
 }
 
 TCalendario::~TCalendario()
@@ -72,75 +84,50 @@ TCalendario::~TCalendario()
     dia = 1;
     mes = 1;
     anyo = 1900;
-
     if (mensaje != NULL)
     {
         delete[] mensaje;
     }
-
     mensaje = NULL;
 }
 
-TCalendario &TCalendario::operator=(const TCalendario &cal)
+TCalendario &TCalendario::operator=(const TCalendario &c)
 {
-    if (this != &cal)
+    if (this != &c)
     {
         (*this).~TCalendario();
-        Copia(cal);
+        copia(c);
     }
-
     return *this;
 }
 
-void TCalendario::Copia(const TCalendario &cal)
+TCalendario TCalendario::operator+(int n)
 {
-    dia = cal.dia;
-    mes = cal.mes;
-    anyo = cal.anyo;
-
-    if (cal.mensaje != NULL)
+    TCalendario c(*this);
+    for (int i = 0; i < n; i++)
     {
-        mensaje = new char[strlen(cal.mensaje) + 1];
-        strcpy(this->mensaje, cal.mensaje);
+        c++;
     }
-    else
-    {
-        mensaje = NULL;
-    }
+    return c;
 }
 
-TCalendario TCalendario::operator+(int dias)
+TCalendario TCalendario::operator-(int n)
 {
-    TCalendario temp(*this);
-
-    for (int i = 0; i < dias; i++)
+    TCalendario c(*this);
+    for (int i = 0; i < n; i++)
     {
-        temp++;
+        c--;
     }
-
-    return temp;
-}
-
-TCalendario TCalendario::operator-(int dias)
-{
-    TCalendario temp(*this);
-
-    for (int i = 0; i < dias; i++)
+    if (!daysInMonth(c.dia, c.mes, c.anyo))
     {
-        temp--;
+        c.~TCalendario();
     }
-
-    if (!ComprobarFecha(temp.dia, temp.mes, temp.anyo))
-    {
-        temp.~TCalendario();
-    }
-
-    return temp;
+    return c;
 }
 
 TCalendario TCalendario::operator++(int dias)
 {
-    TCalendario temp(*this);
+    TCalendario c(*this);
 
     if (mes == 1 || mes == 3 || mes == 5 || mes == 7 || mes == 8 || mes == 10)
     {
@@ -211,7 +198,7 @@ TCalendario TCalendario::operator++(int dias)
         }
     }
 
-    return temp;
+    return c;
 }
 
 TCalendario &TCalendario::operator++()
@@ -334,7 +321,7 @@ TCalendario TCalendario::operator--(int dias)
         dia--;
     }
 
-    if (!ComprobarFecha(dia, mes, anyo))
+    if (!daysInMonth(dia, mes, anyo))
     {
         this->~TCalendario();
     }
@@ -386,7 +373,7 @@ TCalendario &TCalendario::operator--()
         dia--;
     }
 
-    if (!ComprobarFecha(dia, mes, anyo))
+    if (!daysInMonth(dia, mes, anyo))
     {
         this->~TCalendario();
     }
@@ -394,34 +381,31 @@ TCalendario &TCalendario::operator--()
     return *this;
 }
 
-bool TCalendario::ModFecha(int dia, int mes, int anyo)
+bool TCalendario::ModFecha(int d, int m, int a)
 {
-    bool valido = false;
-
-    if (ComprobarFecha(dia, mes, anyo))
+    if (daysInMonth(d, m, a))
     {
-        this->dia = dia;
-        this->mes = mes;
-        this->anyo = anyo;
-        valido = true;
+        dia = d;
+        mes = m;
+        anyo = a;
+        return true;
     }
 
-    return valido;
+    return false;
 }
 
 bool TCalendario::ModMensaje(char *mens)
 {
-
     if (mens == NULL)
     {
-        delete[] this->mensaje;
-        this->mensaje = NULL;
+        delete[] mensaje;
+        mensaje = NULL;
         return true;
     }
     else
     {
-        delete[] this->mensaje;
-        this->mensaje = new char[strlen(mens) + 1];
+        delete[] mensaje;
+        mensaje = new char[strlen(mens) + 1];
         strcpy(this->mensaje, mens);
         return true;
     }
@@ -429,65 +413,69 @@ bool TCalendario::ModMensaje(char *mens)
     return false;
 }
 
-bool TCalendario::operator==(const TCalendario &cal)
+bool TCalendario::operator==(const TCalendario &c)
 {
+    bool iguales;
 
-    if (dia == cal.dia && mes == cal.mes && anyo == cal.anyo)
+    iguales = dia == c.dia && mes == c.mes && anyo == c.anyo;
+
+    if (iguales)
     {
-        if (mensaje == NULL || cal.mensaje == NULL)
+        if (mensaje == NULL && c.mensaje == NULL)
         {
-            if (mensaje == NULL && cal.mensaje == NULL)
-            {
-                return true;
-            }
+            iguales = true;
         }
-        else if (strcmp(mensaje, cal.mensaje) == 0)
+        else if (mensaje == NULL || c.mensaje == NULL)
         {
-            return true;
+            iguales = false;
+        }
+        else
+        {
+            iguales = strcmp(mensaje, c.mensaje) == 0;
         }
     }
 
-    return false;
+    return iguales;
 }
 
-bool TCalendario::operator!=(const TCalendario &cal)
+bool TCalendario::operator!=(const TCalendario &c)
 {
-    return !(*this == cal);
+    return !(*this == c);
 }
 
-bool TCalendario::operator>(const TCalendario &cal)
+bool TCalendario::operator>(const TCalendario &c)
 {
-    if (this->anyo > cal.anyo)
+    if (anyo > c.anyo)
     {
         return true;
     }
-    else if (this->anyo == cal.anyo && this->mes > cal.mes)
+    else if (anyo == c.anyo && mes > c.mes)
     {
         return true;
     }
-    else if (this->anyo == cal.anyo && this->mes == cal.mes && this->dia > cal.dia)
+    else if (anyo == c.anyo && mes == c.mes && dia > c.dia)
     {
         return true;
     }
-    else if (this->anyo == cal.anyo && this->mes == cal.mes && this->dia == cal.dia)
+    else if (anyo == c.anyo && mes == c.mes && dia == c.dia)
     {
-        if (this->mensaje != cal.mensaje)
+        if (mensaje != c.mensaje)
         {
-            if (this->mensaje == NULL)
+            if (mensaje == NULL)
             {
                 return false;
             }
-            else if (cal.mensaje == NULL)
+            else if (c.mensaje == NULL)
             {
                 return true;
             }
             else
             {
-                if (strcmp(this->mensaje, cal.mensaje) == 0)
+                if (strcmp(mensaje, c.mensaje) == 0)
                 {
                     return false;
                 }
-                else if (strcmp(this->mensaje, cal.mensaje) > 0)
+                else if (strcmp(mensaje, c.mensaje) > 0)
                 {
                     return true;
                 }
@@ -502,15 +490,15 @@ bool TCalendario::operator>(const TCalendario &cal)
     return false;
 }
 
-bool TCalendario::operator<(const TCalendario &cal)
+bool TCalendario::operator<(const TCalendario &c)
 {
-    if ((*this) == cal)
+    if ((*this) == c)
     {
         return false;
     }
     else
     {
-        return !(*this > cal);
+        return !(*this > c);
     }
 }
 
@@ -544,39 +532,39 @@ char *TCalendario::Mensaje() const
     return mensaje;
 }
 
-ostream &operator<<(ostream &s, const TCalendario &calendario)
+ostream &operator<<(ostream &s, const TCalendario &c)
 {
-    if (calendario.Dia() < 10)
+    if (c.Dia() < 10)
     {
-        s << 0 << calendario.Dia();
+        s << 0 << c.Dia();
     }
     else
     {
-        s << calendario.Dia();
+        s << c.Dia();
     }
 
     s << "/";
 
-    if (calendario.Mes() < 10)
+    if (c.Mes() < 10)
     {
-        s << 0 << calendario.Mes();
+        s << 0 << c.Mes();
     }
     else
     {
-        s << calendario.Mes();
+        s << c.Mes();
     }
 
     s << "/";
 
-    s << calendario.Anyo() << " ";
+    s << c.Anyo() << " ";
 
-    if (calendario.Mensaje() == NULL)
+    if (c.Mensaje() == NULL)
     {
         s << "\"\"";
     }
     else
     {
-        s << "\"" << calendario.Mensaje() << "\"";
+        s << "\"" << c.Mensaje() << "\"";
     }
 
     return s;
